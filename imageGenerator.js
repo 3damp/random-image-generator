@@ -1,35 +1,94 @@
+//--------------------------------
+// Random Image Generator
 // 
 // Armand M.
 //--------------------------------
 
-
-
 class ImageGenerator {
     
-    constructor(sideUnits) {
-        this.sideUnits = sideUnits || 16; // cells per row/column
-        this.canvas = document.getElementById('canvas');
+    /**
+     * Create a new instance and assign it to a canvas element.
+     * @param {*} sideUnits number of cells (big pixels) per side.
+     * @param {*} canvasId element id of the canvas.
+     */
+    constructor(sideUnits, canvasId) {
+        // ## Init ##
+        this.canvas = document.getElementById(canvasId || 'canvas');
         this.context = this.canvas.getContext("2d");
-        this.pixelRatio = this.canvas.width / this.sideUnits;
+        
+        // units
+        this.setNewUnits(sideUnits);
 
-        this.backgroundColor = this.genColor();
-        this.color1 = this.genColor();
-        this.color2 = this.color1;
-        this.color2 = this.genColor();
-        this.cVal = 255;
+        // generator params
+        this.initialChildProbability = 1;
+        this.finalChildProbability = 0;
 
-        this.cells = Array(this.sideUnits);
-        for (let i = 0; i < this.cells.length; i++) {
-            this.cells[i] = Array(this.sideUnits);
-        }
+        this.initialMinChildrenPerCell = 0;
+        this.finalMinChildrenPerCell = 0;
 
+        this.initialMaxChildrenPerCell = 4;
+        this.finalMaxChildrenPerCell = 4;
+
+        this.doMirror = true;
+
+        // init colors
+        this.randomizeColors();
+        this.currentColorValue = 255; // for gradient white to black
+
+        // adjacent cell randomizer
         this.positionPool = new PositionPool();
-        this.childProbability = 0.5;
-        this.minChildrenPerCell = 0;
-        this.maxChildrenPerCell = 4;
 
     };
 
+    setNewUnits(sideUnits) {
+        if (sideUnits < 1) sideUnits = 1; // limit
+        if (sideUnits > 256) sideUnits = 256; // limit
+        this.sideUnits = parseInt(sideUnits) || 16; // cells per row/column
+        this.pixelRatio = this.canvas.width / this.sideUnits;
+        this.startingCell = new Cell( Math.floor(0.5 * this.sideUnits -1), Math.floor(0.5 * this.sideUnits -1) ); // center of screen
+        this.initCells();
+    };
+
+    initCells() {
+        this.cells = new Array(this.sideUnits);
+        for (let i = 0; i < this.cells.length; i++) {
+            this.cells[i] = new Array(this.sideUnits);
+        }
+    }
+
+    /**
+     * Generate and paint a brand new image with new colors.
+     */
+    autoRun() {
+        this.createNewImage();
+        this.paint();
+    }
+
+    createNewImage() {
+        this.randomizeColors();
+        this.createCells(this.startingCell.x, this.startingCell.y)
+        if (this.doMirror) this.mirrorImage();
+        // this.paint();
+    };
+
+    createNewShape() {
+        this.createCells(this.startingCell.x, this.startingCell.y)
+        if (this.doMirror) this.mirrorImage();
+        // this.paint();
+    }
+
+    /**
+     * Set colors to new random colors
+     */
+    randomizeColors() {
+        this.backgroundColor = this.randomColor();
+        this.color1 = this.randomColor();
+        this.color2 = this.randomColor();
+    }
+
+    /**
+     * Draw on canvas the already generated image.
+     */
     paint() {
         // paint background
         this.drawBackground();
@@ -48,30 +107,27 @@ class ImageGenerator {
         }
     };
 
-    drawBackground() {
-        this.setColor(this.backgroundColor);
-        this.drawRect( 0, 0, this.sideUnits, this.sideUnits );
-    };
-
+    /**
+     * Start image creation by specifying a starting point to draw from.
+     * @param {*} x X in cell units (not real pixels)
+     * @param {*} y Y in cell units (not real pixels)
+     */
     createCells(x, y) {
+        this.initCells();
         const queue = Array();
         // add cell
         queue.push(new Cell(x, y));
         this.cells[x][y] = true;
 
-        this.createC(queue);
+        this.createCell(queue);
     };
     
-    createC(queue) {
+    createCell(queue) {
         // return if empty
         if(queue.length <= 0) return;
 
         // get first in queue
         const cell = queue.shift();
-
-        // process first in queue
-        this.setColor(this.getCurrentColor());
-        this.drawRect(cell.x, cell.y, 1, 1);
 
         // create childs
         let pos;
@@ -91,8 +147,6 @@ class ImageGenerator {
                     this.cells[newX][newY] = true;
                     numChildrenCreated++;
                 }else{
-                    this.setColor('black');
-                    this.drawRect(newX,newY,1,1);
                     this.cells[newX][newY] = false;
                 }
             }
@@ -101,20 +155,25 @@ class ImageGenerator {
         this.positionPool = new PositionPool();
 
         // recurse
-        this.createC(queue);
-    }
+        this.createCell(queue);
+    };
 
+    /**
+     * Return true if the specified position (in cell units) is inside the viewport.
+     * @param {*} x 
+     * @param {*} y 
+     */
     isPosValid(x,y) {
         return (0 <= x && x < this.sideUnits) && (0 <= y && y < this.sideUnits);
-    }
+    };
 
     /**
      * Mirrors the created image
      */
-    mirror(){
+    mirrorImage(){
         const lengthX = this.cells.length;
-        const startPoint = Math.floor(lengthX/2);
-        for (let i = startPoint; i < lengthX; i++) {
+        const mirrorStartPoint = Math.floor(lengthX/2);
+        for (let i = mirrorStartPoint; i < lengthX; i++) {
             for (let j = 0; j < this.cells[i].length; j++) {
                 this.cells[i][j] = this.cells[lengthX-1-i][j]
             }            
@@ -125,14 +184,19 @@ class ImageGenerator {
         this.context.fillStyle = color;
     };
 
+    drawBackground() {
+        this.setColor(this.backgroundColor);
+        this.drawRect( 0, 0, this.sideUnits, this.sideUnits );
+    };
+
     /**
-     * User to paint with gradient. It returns a darker color every time.
+     * Used to paint with gradient. It returns a darker color every time.
      */
     getCurrentColor() {
         const step = 2;
-        const v = this.cVal;
-        if (this.cVal >= step) {
-            this.cVal-=step;
+        const v = this.currentColorValue;
+        if (this.currentColorValue >= step) {
+            this.currentColorValue-=step;
         }
         return `rgb(${v},${v},${v})`
     }
@@ -140,7 +204,7 @@ class ImageGenerator {
     /**
      * Generates a random color.
      */
-    genColor() {
+    randomColor() {
         const r = Math.random() * 255;
         const g = Math.random() * 255;
         const b = Math.random() * 255;
@@ -164,7 +228,12 @@ class ImageGenerator {
      * @param {*} x 
      * @param {*} y 
      */
-    updateParamsForEveryCell(x, y) {};
+    updateParamsForEveryCell(x, y) {
+        const depth = this.getPointDepth(x,y);
+        this.childProbability = this.initialChildProbability - depth * ( this.initialChildProbability - this.finalChildProbability );
+        this.minChildrenPerCell = this.initialMinChildrenPerCell - depth * ( this.initialMinChildrenPerCell - this.finalMinChildrenPerCell );
+        this.maxChildrenPerCell = this.initialMaxChildrenPerCell - depth * ( this.initialMaxChildrenPerCell - this.finalMaxChildrenPerCell );
+    };
 
     /**
      * Converts from units to pixels.
@@ -188,6 +257,33 @@ class ImageGenerator {
         return Math.min( Math.sqrt( relX*relX + relY*relY ), 1);
     };
 
+    setDoMirror(value) {
+        if (value === true || value === false) this.doMirror = value;
+    }
+    setInitialChildProb(value) {
+        const floatValue = parseFloat(value);
+        if (!isNaN(floatValue)) this.initialChildProbability = floatValue;
+    }
+    setFinalChildProb(value) {
+        const floatValue = parseFloat(value);
+        if (!isNaN(floatValue)) this.finalChildProbability = floatValue;
+    }
+    setInitialMinChildren(value) {
+        const intValue = parseInt(value);
+        if (!isNaN(intValue)) this.initialMinChildrenPerCell = intValue;
+    }
+    setFinalMinChildren(value) {
+        const intValue = parseInt(value);
+        if (!isNaN(intValue)) this.finalMinChildrenPerCell = intValue;
+    }
+    setInitialMaxChildren(value) {
+        const intValue = parseInt(value);
+        if (!isNaN(intValue)) this.initialMaxChildrenPerCell = intValue;
+    }
+    setFinalMaxChildren(value) {
+        const intValue = parseInt(value);
+        if (!isNaN(intValue)) this.finalMaxChildrenPerCell = intValue;
+    }
     
 };
 
@@ -205,7 +301,8 @@ class Cell {
 };
 
 /**
- * Get a random unique position
+ * Get a random unique relative position. 
+ *  UP = [0,-1], RIGHT = [1,0], DOWN = [0,1], LEFT = [-1,0]
  */
 class PositionPool {
     constructor() {
@@ -218,37 +315,13 @@ class PositionPool {
         }
         const randomIndex = Math.floor(Math.random() * this.currentLength);
         const result = this.pool[randomIndex];
-        // swap entries
+        // swap entries and reduce length to remove used options from pool.
         this.pool[randomIndex] = this.pool[this.currentLength-1] 
         this.currentLength--;
+
         return result;
     }
 };
 
-
-// RUN
-
-const ig = new ImageGenerator( 16 );
-ig.drawBackground();
-
-ig.updateParamsForEveryCell = function(x, y) {
-    const baseProb = 1;
-    this.childProbability = baseProb - baseProb * this.getPointDepth(x, y);
-    // if (this.getPointDepth(x,y) < 0.3) {
-    //     this.minChildrenPerCell = 4;
-    //     this.maxChildrenPerCell = 4;
-    // } else {
-    //     this.minChildrenPerCell = 1;
-    //     this.maxChildrenPerCell = 1;
-    // }
-    // console.log(`${x}, ${y} - ${this.getPointDepth(x,y)}`)
-    // console.log('B: '+ this.minChildrenPerCell)
-}
-        
-ig.createCells(Math.floor(0.9*ig.sideUnits/2)-1, Math.floor(ig.sideUnits/2)-1)
-        
-// ig.setColor(ig.color1)
-ig.mirror()
-ig.paint();
         
 

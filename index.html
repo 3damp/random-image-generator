@@ -5,9 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Generator</title>
 </head>
-<body>
+<body style="
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+">
 
-    <canvas id="canvas" width="900" height="900"></canvas>
+    <canvas id="canvas" width="256" height="256"></canvas>
+
+    <button onclick="newClicked()">New</button>
+    <div>
+        <label>Size</label>
+        <input id="sizeIn" type="range" min="6" max="64" value="16" oninput="sizeChange(this.value)">
+        <label id="sizeOut"></label>
+    </div>
+    <div>
+        <label>mirror</label>
+        <input type="checkbox" checked="true" id="mirrorCheck" name="mirrorCheck" onclick="mirror();">
+    </div>
+    <br>
+    <button onclick="newShapeClicked()">New Shape</button>
+    <br>
+    <button onclick="newColors()">New Colors</button>
+    
     <script src="imageGenerator.js"></script>
+    <script src="runScript.js"></script>
 </body>
 </html>
