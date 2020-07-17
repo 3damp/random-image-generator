@@ -32,7 +32,6 @@ class ImageGenerator {
         this.doMirror = true;
 
         // init colors
-        this.randomizeColors();
         this.currentColorValue = 255; // for gradient white to black
 
         // adjacent cell randomizer
@@ -41,12 +40,20 @@ class ImageGenerator {
     };
 
     setNewUnits(sideUnits) {
-        if (sideUnits < 1) sideUnits = 1; // limit
+        if (sideUnits < 2) sideUnits = 2; // limit
         if (sideUnits > 256) sideUnits = 256; // limit
         this.sideUnits = parseInt(sideUnits) || 16; // cells per row/column
         this.pixelRatio = this.canvas.width / this.sideUnits;
         this.startingCell = new Cell( Math.floor(0.5 * this.sideUnits -1), Math.floor(0.5 * this.sideUnits -1) ); // center of screen
         this.initCells();
+    };
+
+    setNewSeed(seed) {
+        rnd.setNewSeed(seed);
+    };
+
+    getSeed() {
+        return rnd.seed;
     };
 
     initCells() {
@@ -142,7 +149,7 @@ class ImageGenerator {
                 
                 if(this.updateParamsForEveryCell) this.updateParamsForEveryCell(newX, newY);
 
-                if ( (Math.random() < this.childProbability || numChildrenCreated < this.minChildrenPerCell) && numChildrenCreated < this.maxChildrenPerCell) {
+                if ( (rnd.random() < this.childProbability || numChildrenCreated < this.minChildrenPerCell) && numChildrenCreated < this.maxChildrenPerCell) {
                     queue.push(new Cell(newX, newY));
                     this.cells[newX][newY] = true;
                     numChildrenCreated++;
@@ -205,9 +212,9 @@ class ImageGenerator {
      * Generates a random color.
      */
     randomColor() {
-        const r = Math.random() * 255;
-        const g = Math.random() * 255;
-        const b = Math.random() * 255;
+        const r = rnd.random() * 255;
+        const g = rnd.random() * 255;
+        const b = rnd.random() * 255;
     
         return `rgb(${r},${g},${b})`
     };
@@ -313,7 +320,7 @@ class PositionPool {
         if (this.currentLength < 1) {
             return null
         }
-        const randomIndex = Math.floor(Math.random() * this.currentLength);
+        const randomIndex = Math.floor(rnd.random() * this.currentLength);
         const result = this.pool[randomIndex];
         // swap entries and reduce length to remove used options from pool.
         this.pool[randomIndex] = this.pool[this.currentLength-1] 
@@ -323,5 +330,53 @@ class PositionPool {
     }
 };
 
-        
+/**
+ * Pseudorandom number generator.
+ */
+class PseudorandomGenerator {
+    constructor(seed) {
+        this.setNewSeed(seed);
+    }
+    
+    random() {
+        this.currentRandom = this.mulberry32(this.currentRandom);
+        return this.currentRandom;
+    }
 
+    setNewSeed(seed) {
+        this.seed = seed || this.createRandomSeed(6);
+        this.currentRandom = this.stringToNumber(this.seed);
+    }
+    
+    createRandomSeed(length) {
+        return Math.random().toString(36).substr(2,length).toUpperCase();
+    }
+
+    stringToNumber(string) {
+        const maxLength = 100;
+        let result = 1;
+
+        if(!string) return result;
+
+        string = string.toLowerCase();
+        if (string.length > maxLength) string = string.substring(0, maxLength);
+        for (let i = 0; i < string.length; i++) {
+            result += string.charCodeAt(i);
+        }
+        return result;
+    }
+
+    /**
+     * Return a new pseudorandom number.
+     * @param {*} prevValue Previous pseudorandom number.
+     */
+    mulberry32(prevValue) {
+        prevValue *= 100000000;
+        var t = prevValue += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+
+const rnd = new PseudorandomGenerator();
