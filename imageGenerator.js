@@ -75,13 +75,11 @@ class ImageGenerator {
         this.randomizeColors();
         this.createCells(this.startingCell.x, this.startingCell.y)
         if (this.doMirror) this.mirrorImage();
-        // this.paint();
     };
 
     createNewShape() {
         this.createCells(this.startingCell.x, this.startingCell.y)
         if (this.doMirror) this.mirrorImage();
-        // this.paint();
     }
 
     /**
@@ -97,9 +95,7 @@ class ImageGenerator {
      * Draw on canvas the already generated image.
      */
     paint() {
-        // paint background
         this.drawBackground();
-
         // draw all cells
         for (let i = 0; i < this.cells.length; i++) {
             for (let j = 0; j < this.cells[i].length; j++) {
@@ -291,7 +287,6 @@ class ImageGenerator {
         const intValue = parseInt(value);
         if (!isNaN(intValue)) this.finalMaxChildrenPerCell = intValue;
     }
-    
 };
 
 /**
