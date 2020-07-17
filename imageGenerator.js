@@ -41,7 +41,7 @@ class ImageGenerator {
 
     setNewUnits(sideUnits) {
         if (sideUnits < 2) sideUnits = 2; // limit
-        if (sideUnits > 256) sideUnits = 256; // limit
+        if (sideUnits > 512) sideUnits = 512; // limit
         this.sideUnits = parseInt(sideUnits) || 16; // cells per row/column
         this.pixelRatio = this.canvas.width / this.sideUnits;
         this.startingCell = new Cell( Math.floor(0.5 * this.sideUnits -1), Math.floor(0.5 * this.sideUnits -1) ); // center of screen
@@ -73,12 +73,12 @@ class ImageGenerator {
 
     createNewImage() {
         this.randomizeColors();
-        this.createCells(this.startingCell.x, this.startingCell.y)
+        this.createCellsFloodFill(this.startingCell.x, this.startingCell.y)
         if (this.doMirror) this.mirrorImage();
     };
 
     createNewShape() {
-        this.createCells(this.startingCell.x, this.startingCell.y)
+        this.createCellsFloodFill(this.startingCell.x, this.startingCell.y)
         if (this.doMirror) this.mirrorImage();
     }
 
@@ -111,55 +111,97 @@ class ImageGenerator {
     };
 
     /**
-     * Start image creation by specifying a starting point to draw from.
+     * Start image creation by specifying a starting point to draw from. (Flood Fill algorithm without recursion)
      * @param {*} x X in cell units (not real pixels)
      * @param {*} y Y in cell units (not real pixels)
      */
-    createCells(x, y) {
+    createCellsFloodFill(x, y) {
         this.initCells();
-        const queue = Array();
-        // add cell
+        const queue = [];
+        // add first cell
         queue.push(new Cell(x, y));
         this.cells[x][y] = true;
 
-        this.createCell(queue);
+        // return if empty
+        while (queue.length > 0) {
+            
+            // get first in queue
+            const cell = queue.shift();
+            
+            // create childs
+            let pos;
+            let numChildrenCreated = 0;
+
+            const posPool = new PositionPool();
+
+            // do this for each possible new position:
+            while ((pos = posPool.getPos()) != null) {
+                const newX = cell.x + pos[0];
+                const newY = cell.y + pos[1];
+
+                if ( this.isPosValid(newX, newY)                // IF:  cell is inside viewport
+                && this.cells[newX][newY] === undefined         //      cell has not been processed
+                && !queue.some(e => e.equals(newX, newY)) ) {   //      cell is not in the queue yet
+                    
+                    const params = this.getParamsForCell(newX, newY);
+                    
+                    if ( (rnd.random() < params.childProbability || numChildrenCreated < params.minChildrenPerCell) && numChildrenCreated < params.maxChildrenPerCell) {
+                        // add new cell
+                        queue.push(new Cell(newX, newY));
+                        this.cells[newX][newY] = true;
+
+                        numChildrenCreated++;
+                    }else{
+                        // add ending cell
+                        this.cells[newX][newY] = false;
+                    }
+                }
+            }
+        }
     };
     
-    createCell(queue) {
-        // return if empty
-        if(queue.length <= 0) return;
+    /**
+     * Start image creation by specifying a starting point to draw from. (Recursion version)
+     * @param {*} x X in cell units (not real pixels)
+     * @param {*} y Y in cell units (not real pixels)
+     */
+    createCellsRecursion(x, y) {
+        this.initCells();
+        this.cells[x][y] = true;
 
-        // get first in queue
-        const cell = queue.shift();
-
+        this.crtCellRec(x, y);
+    }
+    
+    /**
+     * Recursive function to create every cell.
+     * @param {*} x 
+     * @param {*} y 
+     */
+    crtCellRec(x, y) {
         // create childs
         let pos;
         let numChildrenCreated = 0;
-        while ((pos = this.positionPool.getPos()) != null) {
-            const newX = cell.x + pos[0];
-            const newY = cell.y + pos[1];
-            
-            if ( this.isPosValid(newX, newY) 
-            && this.cells[newX][newY] === undefined
-            && !queue.some(e => e.equals(newX, newY)) ) {
-                
-                if(this.updateParamsForEveryCell) this.updateParamsForEveryCell(newX, newY);
 
-                if ( (rnd.random() < this.childProbability || numChildrenCreated < this.minChildrenPerCell) && numChildrenCreated < this.maxChildrenPerCell) {
-                    queue.push(new Cell(newX, newY));
-                    this.cells[newX][newY] = true;
+        const pPool = new PositionPool();
+        while ((pos = pPool.getPos()) != null) {
+            const newX = x + pos[0];
+            const newY = y + pos[1];
+             
+            if ( this.isPosValid(newX, newY) 
+            && this.cells[newX][newY] === undefined ) {
+
+                const params = this.getParamsForCell(newX, newY);
+                if ( (rnd.random() < params.childProbability || numChildrenCreated < params.minChildrenPerCell) && numChildrenCreated < params.maxChildrenPerCell) {
                     numChildrenCreated++;
+                    this.cells[newX][newY] = true;
+                    this.crtCellRec(newX, newY);
+                    //  setTimeout(() => this.createCellRecursion(newX, newY), 0);
                 }else{
                     this.cells[newX][newY] = false;
                 }
             }
-        }
-        // reset positionPool
-        this.positionPool = new PositionPool();
-
-        // recurse
-        this.createCell(queue);
-    };
+        }        
+    }
 
     /**
      * Return true if the specified position (in cell units) is inside the viewport.
@@ -227,15 +269,17 @@ class ImageGenerator {
     };
 
     /**
-     * Override to change parameters on every createCell()
+     * Return parameters for a specific cell
      * @param {*} x 
      * @param {*} y 
      */
-    updateParamsForEveryCell(x, y) {
+    getParamsForCell(x, y) {
         const depth = this.getPointDepth(x,y);
-        this.childProbability = this.initialChildProbability - depth * ( this.initialChildProbability - this.finalChildProbability );
-        this.minChildrenPerCell = this.initialMinChildrenPerCell - depth * ( this.initialMinChildrenPerCell - this.finalMinChildrenPerCell );
-        this.maxChildrenPerCell = this.initialMaxChildrenPerCell - depth * ( this.initialMaxChildrenPerCell - this.finalMaxChildrenPerCell );
+        return {
+            childProbability: this.initialChildProbability - depth * ( this.initialChildProbability - this.finalChildProbability ),
+            minChildrenPerCell: this.initialMinChildrenPerCell - depth * ( this.initialMinChildrenPerCell - this.finalMinChildrenPerCell ),
+            maxChildrenPerCell: this.initialMaxChildrenPerCell - depth * ( this.initialMaxChildrenPerCell - this.finalMaxChildrenPerCell ),
+        }
     };
 
     /**

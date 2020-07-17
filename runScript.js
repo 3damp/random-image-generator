@@ -1,12 +1,14 @@
 
-
 // RUN
-
-
 const ig = new ImageGenerator( 16 );
+
+ig.setInitialChildProb(1);
+ig.setFinalChildProb(0.5);
         
 ig.autoRun();
-        
+
+
+// Listeners
 const newClicked = ()=> {
     ig.autoRun();
 }
@@ -27,6 +29,6 @@ const newShapeClicked = ()=> {
     ig.paint();
 }
 const newColors = ()=> {
-    ig.randomiseColors();
+    ig.randomizeColors();
     ig.paint();
 }
