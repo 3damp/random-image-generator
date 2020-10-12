@@ -3,7 +3,7 @@
 const ig = new ImageGenerator( 16 );
 
 ig.setInitialChildProb(1);
-ig.setFinalChildProb(0.5);
+ig.setFinalChildProb(0);
         
 ig.autoRun();
 

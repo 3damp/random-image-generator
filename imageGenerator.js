@@ -298,7 +298,7 @@ class ImageGenerator {
      * @param {*} y 
      */
     getPointDepth(x,y) {
-        const radius = (this.sideUnits/2)-1;
+        const radius = (this.sideUnits/2);
         const relX = (x - radius)/radius;
         const relY = (y - radius)/radius;
         return Math.min( Math.sqrt( relX*relX + relY*relY ), 1);
