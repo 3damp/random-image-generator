@@ -400,7 +400,7 @@ class PseudorandomGenerator {
         string = string.toLowerCase();
         if (string.length > maxLength) string = string.substring(0, maxLength);
         for (let i = 0; i < string.length; i++) {
-            result += string.charCodeAt(i);
+            result *= string.charCodeAt(i);
         }
         return result;
     }
