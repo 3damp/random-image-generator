@@ -1,18 +1,22 @@
 
 // RUN
-const ig = new ImageGenerator( 16 );
+const ig = new ImageGenerator( 32 );
+let seed = ig.getSeed();
 
 ig.setInitialChildProb(1);
 ig.setFinalChildProb(0);
         
-ig.autoRun();
+ig.autoRun(100);
 
+let age = 1;
 
 // Listeners
-const newClicked = ()=> {
-    ig.autoRun();
+const newClicked = () => {
+    ig.autoRun(100);
+    seed = ig.getSeed();
 }
-const sizeChange = (value)=> {
+
+const sizeChange = (value) => {
     document.getElementById("sizeOut").innerHTML = value;
     ig.setNewUnits(value);
 }
@@ -24,11 +28,20 @@ const mirror = ()=> {
         ig.doMirror = false;
     }
 }
-const newShapeClicked = ()=> {
-    ig.createNewShape();
-    ig.paint();
+const buttonAHandler = () => {
+    // create new shape on age 1
+    age = 1;
+    ig.setNewSeed();
+    ig.autoRun(age);
+    seed = ig.getSeed();
+    // ig.createNewShape(age);
+    // ig.paint();
 }
-const newColors = ()=> {
-    ig.randomizeColors();
-    ig.paint();
+const buttonBHandler = () => {
+    // add age using the same seed
+    age++;
+    ig.setNewSeed(seed);
+    ig.autoRun(age);
+    // ig.randomizeColors();
+    // ig.paint();
 }

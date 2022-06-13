@@ -1,11 +1,11 @@
 //--------------------------------
-// Random Image Generator
+// Random Image Generator v0.5.2
 // 
 // Armand M.
 //--------------------------------
 
 class ImageGenerator {
-    
+
     /**
      * Create a new instance and assign it to a canvas element.
      * @param {*} sideUnits number of cells (big pixels) per side.
@@ -66,14 +66,14 @@ class ImageGenerator {
     /**
      * Generate and paint a brand new image with new colors.
      */
-    autoRun() {
-        this.createNewImage();
+    autoRun(age) {
+        this.createNewImage(age);
         this.paint();
     }
 
-    createNewImage() {
+    createNewImage(age) {
         this.randomizeColors();
-        this.createCellsFloodFill(this.startingCell.x, this.startingCell.y)
+        this.createCellsFloodFill(this.startingCell.x, this.startingCell.y, age)
         if (this.doMirror) this.mirrorImage();
     };
 
@@ -99,10 +99,13 @@ class ImageGenerator {
         // draw all cells
         for (let i = 0; i < this.cells.length; i++) {
             for (let j = 0; j < this.cells[i].length; j++) {
-                if (this.cells[i][j] === true) {
+                if (this.cells[i][j] === Cell.CellState.Processed) {
                     this.setColor(this.color1);
                     this.drawRect(i,j,1,1);
-                } else if (this.cells[i][j] === false) {
+                } else if (this.cells[i][j] === Cell.CellState.Dead) {
+                    this.setColor(this.color2);
+                    this.drawRect(i,j,1,1);
+                } else if (this.cells[i][j] === Cell.CellState.Growing) {
                     this.setColor(this.color2);
                     this.drawRect(i,j,1,1);
                 }
@@ -115,18 +118,20 @@ class ImageGenerator {
      * @param {*} x X in cell units (not real pixels)
      * @param {*} y Y in cell units (not real pixels)
      */
-    createCellsFloodFill(x, y) {
+    createCellsFloodFill(x, y, age) {
         this.initCells();
         const queue = [];
         // add first cell
         queue.push(new Cell(x, y));
-        this.cells[x][y] = true;
+        this.cells[x][y] = Cell.CellState.Growing;
+        let iAge = age;
 
         // return if empty
-        while (queue.length > 0) {
-            
+        while (queue.length > 0 && iAge > 0) {
+            iAge--;
             // get first in queue
             const cell = queue.shift();
+            this.cells[cell.x][cell.y] = Cell.CellState.Processed;
             
             // create childs
             let pos;
@@ -148,12 +153,12 @@ class ImageGenerator {
                     if ( (rnd.random() < params.childProbability || numChildrenCreated < params.minChildrenPerCell) && numChildrenCreated < params.maxChildrenPerCell) {
                         // add new cell
                         queue.push(new Cell(newX, newY));
-                        this.cells[newX][newY] = true;
+                        this.cells[newX][newY] = Cell.CellState.Growing;
 
                         numChildrenCreated++;
                     }else{
                         // add ending cell
-                        this.cells[newX][newY] = false;
+                        this.cells[newX][newY] = Cell.CellState.Dead;
                     }
                 }
             }
@@ -167,7 +172,7 @@ class ImageGenerator {
      */
     createCellsRecursion(x, y) {
         this.initCells();
-        this.cells[x][y] = true;
+        this.cells[x][y] = 0;
 
         this.crtCellRec(x, y);
     }
@@ -193,11 +198,11 @@ class ImageGenerator {
                 const params = this.getParamsForCell(newX, newY);
                 if ( (rnd.random() < params.childProbability || numChildrenCreated < params.minChildrenPerCell) && numChildrenCreated < params.maxChildrenPerCell) {
                     numChildrenCreated++;
-                    this.cells[newX][newY] = true;
+                    this.cells[newX][newY] = 0;
                     this.crtCellRec(newX, newY);
                     //  setTimeout(() => this.createCellRecursion(newX, newY), 0);
                 }else{
-                    this.cells[newX][newY] = false;
+                    this.cells[newX][newY] = 1;
                 }
             }
         }        
@@ -209,7 +214,7 @@ class ImageGenerator {
      * @param {*} y 
      */
     isPosValid(x,y) {
-        return (0 <= x && x < this.sideUnits) && (0 <= y && y < this.sideUnits);
+        return (0 <= x && x < this.sideUnits/2) && (0 <= y && y < this.sideUnits);
     };
 
     /**
@@ -337,6 +342,12 @@ class ImageGenerator {
  * Cell class
  */
 class Cell {
+    static CellState = {
+        Processed: 0,
+        Dead: 1,
+        Growing: 2,
+    }
+    
     constructor(x, y) {
         this.x = x;
         this.y = y;
