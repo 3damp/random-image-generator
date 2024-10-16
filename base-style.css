@@ -26,6 +26,16 @@ button {
     border-radius: 5px;
     cursor: pointer;
 }
+
+button:hover {
+    background-color: #555;
+}
+
+button:active {
+    background-color: #444;
+}
+
+
 * {
     -webkit-tap-highlight-color: transparent;
 }
