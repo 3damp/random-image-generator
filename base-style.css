@@ -1,0 +1,85 @@
+:root {
+    --background-color: #222;
+    --text-color: #ccc;
+    --accent-color: #333;
+
+    --max-width: 400px;
+
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+    margin: 0;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+button {
+    margin: 10px 0;
+    padding: 10px 20px;
+    background-color: var(--accent-color);
+    color: #ccc;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
+.content-container {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 20px;
+    max-width: var(--max-width);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.controls-container {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.field {
+    margin: 10px 0;
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+}
+
+.field label,span {
+    margin: auto 0;
+}
+
+.field label:first-child {
+    min-width: 100px;
+}
+
+.field input {
+    flex: 1;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    flex-grow: 0;
+}
+.field > div {
+    flex-grow: 1;
+    display: flex;
+}
+
+.slider-container {
+    display: flex;
+    align-items: stretch;
+    flex-wrap: wrap;
+}
+
+.slider-container input {
+    flex: 1;
+    margin: 0 10px;
+}

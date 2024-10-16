@@ -1,47 +1,41 @@
+import ImageGenerator from "./imageGenerator.js";
+
+// Elements
+const newButton = document.getElementById("newButton")
+const sizeInput = document.getElementById("sizeInput")
+const sizeOutput = document.getElementById("sizeOutput")
+sizeOutput.textContent = sizeInput.value;
+const mirrorCheck = document.getElementById("mirrorCheck")
 
 // RUN
-const ig = new ImageGenerator( 32 );
+const ig = new ImageGenerator( 16 );
 let seed = ig.getSeed();
 
 ig.setInitialChildProb(1);
 ig.setFinalChildProb(0);
         
-ig.autoRun(100);
+ig.createNew();
 
 let age = 1;
 
-// Listeners
+
+// Event handlers
 const newClicked = () => {
-    ig.autoRun(100);
+    ig.createNew();
     seed = ig.getSeed();
+}
+const sizeChange = (value) => {
+    sizeOutput.textContent = value;
+    ig.setNewUnits(value);
+    ig.buildShape();
+    ig.paint();
+}
+const mirrorChanged = ()=> {
+    ig.doMirror = mirrorCheck.checked;
 }
 
-const sizeChange = (value) => {
-    document.getElementById("sizeOut").innerHTML = value;
-    ig.setNewUnits(value);
-}
-const mirror = ()=> {
-    if (document.getElementById('mirrorCheck').checked) {
-        console.log('mirrorON')
-        ig.doMirror = true;
-    } else {
-        ig.doMirror = false;
-    }
-}
-const buttonAHandler = () => {
-    // create new shape on age 1
-    age = 1;
-    ig.setNewSeed();
-    ig.autoRun(age);
-    seed = ig.getSeed();
-    // ig.createNewShape(age);
-    // ig.paint();
-}
-const buttonBHandler = () => {
-    // add age using the same seed
-    age++;
-    ig.setNewSeed(seed);
-    ig.autoRun(age);
-    // ig.randomizeColors();
-    // ig.paint();
-}
+
+// Set event handlers
+newButton.addEventListener("click", newClicked);
+sizeInput.addEventListener("input", (e) => sizeChange(e.target.value));
+mirrorCheck.addEventListener("change", mirrorChanged);

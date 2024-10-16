@@ -1,34 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Generator</title>
+    <script type="module" src="./runScript.js"></script>
+    <link rel="stylesheet" href="base-style.css">
 </head>
-<body style="
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-">
 
-    <canvas id="canvas" width="512" height="512"></canvas>
+<body>
+    <header>
+        <h1>Image Generator</h1>
+    </header>
+    <div class="content-container">
 
-    <button onclick="newClicked()">New</button>
-    <div>
-        <label>Size</label>
-        <input id="sizeIn" type="range" min="6" max="512" value="16" oninput="sizeChange(this.value)">
-        <label id="sizeOut"></label>
+        <canvas id="canvas" width="512" height="512" style="width: 100%; border-radius: 10px;"></canvas>
+
+        <div class="controls-container">
+            <button id="newButton">New</button>
+            <div class="slider-container field">
+                <label>Size</label>
+                <div>
+                    <input id="sizeInput" type="range" min="6" max="128" value="16">
+                    <span id="sizeOutput"></span>
+                </div>
+            </div>
+            <div class="field">
+                <label></label>
+                <label>
+                    <input type="checkbox" id="mirrorCheck" checked>
+                    Mirror
+                </label>
+            </div>
+            <br>
+            <div class="slider-container field">
+                <label>Growth</label>
+                <div>
+                    <input id="ageInput" type="range" min="0" max="100" value="100">
+                </div>
+            </div>
+        </div>
     </div>
-    <div>
-        <label>mirror</label>
-        <input type="checkbox" checked="true" id="mirrorCheck" name="mirrorCheck" onclick="mirror();">
-    </div>
-    <br>
-    <button onclick="buttonAHandler()">A</button>
-    <br>
-    <button onclick="buttonBHandler()">B</button>
-    
-    <script src="imageGenerator.js"></script>
-    <script src="runScript.js"></script>
 </body>
+
 </html>

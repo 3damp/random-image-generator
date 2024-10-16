@@ -1,10 +1,11 @@
 //--------------------------------
-// Random Image Generator v0.5.2
+// Random Image Generator v0.5.3
 // 
-// Armand M.
+// Armand M. 
+// 2020
 //--------------------------------
 
-class ImageGenerator {
+export default class ImageGenerator {
 
     /**
      * Create a new instance and assign it to a canvas element.
@@ -15,28 +16,30 @@ class ImageGenerator {
         // ## Init ##
         this.canvas = document.getElementById(canvasId || 'canvas');
         this.context = this.canvas.getContext("2d");
-        
+        this.age = 100;
         // units
         this.setNewUnits(sideUnits);
-
+        
         // generator params
         this.initialChildProbability = 1;
         this.finalChildProbability = 0;
-
+        
         this.initialMinChildrenPerCell = 0;
         this.finalMinChildrenPerCell = 0;
-
+        
         this.initialMaxChildrenPerCell = 4;
         this.finalMaxChildrenPerCell = 4;
-
+        
         this.doMirror = true;
-
+        
         // init colors
         this.currentColorValue = 255; // for gradient white to black
-
+        
         // adjacent cell randomizer
         this.positionPool = new PositionPool();
-
+        
+        this.randomizeColors();
+        this.setNewSeed();
     };
 
     setNewUnits(sideUnits) {
@@ -63,21 +66,15 @@ class ImageGenerator {
         }
     }
 
-    /**
-     * Generate and paint a brand new image with new colors.
-     */
-    autoRun(age) {
-        this.createNewImage(age);
-        this.paint();
-    }
-
-    createNewImage(age) {
+    createNew() {
+        rnd.setNewSeed();
         this.randomizeColors();
-        this.createCellsFloodFill(this.startingCell.x, this.startingCell.y, age)
+        this.createCellsFloodFill(this.startingCell.x, this.startingCell.y)
         if (this.doMirror) this.mirrorImage();
+        this.paint();
     };
 
-    createNewShape() {
+    buildShape() {
         this.createCellsFloodFill(this.startingCell.x, this.startingCell.y)
         if (this.doMirror) this.mirrorImage();
     }
@@ -118,13 +115,14 @@ class ImageGenerator {
      * @param {*} x X in cell units (not real pixels)
      * @param {*} y Y in cell units (not real pixels)
      */
-    createCellsFloodFill(x, y, age) {
+    createCellsFloodFill(x, y) {
         this.initCells();
+        rnd.reset();
         const queue = [];
         // add first cell
         queue.push(new Cell(x, y));
         this.cells[x][y] = Cell.CellState.Growing;
-        let iAge = age;
+        let iAge = this.age;
 
         // return if empty
         while (queue.length > 0 && iAge > 0) {
@@ -214,7 +212,8 @@ class ImageGenerator {
      * @param {*} y 
      */
     isPosValid(x,y) {
-        return (0 <= x && x < this.sideUnits/2) && (0 <= y && y < this.sideUnits);
+        const widthAvailable = this.doMirror ? this.sideUnits/2 : this.sideUnits;
+        return (0 <= x && x < widthAvailable) && (0 <= y && y < this.sideUnits);
     };
 
     /**
@@ -391,6 +390,10 @@ class PseudorandomGenerator {
     random() {
         this.currentRandom = this.mulberry32(this.currentRandom);
         return this.currentRandom;
+    }
+
+    reset() {
+        this.setNewSeed(this.seed);
     }
 
     setNewSeed(seed) {
